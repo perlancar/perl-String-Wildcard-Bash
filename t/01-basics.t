@@ -44,10 +44,10 @@ subtest contains_wildcard => sub {
         ok( contains_wildcard("{a*,b}"));
         ok( contains_wildcard("{a*,b[a]}"));
         ok(!contains_wildcard("\\{a,b}"));
-        ok( contains_wildcard("\\{a*,b}")); # because of * is not inside brace
+        ok( contains_wildcard("\\{a*,b}")); # because * is not inside brace
         ok( contains_wildcard("\\\\{a*,b}"));
         ok(!contains_wildcard("{a,b\\}"));
-        ok( contains_wildcard("{a*,b\\}")); # because of * is not inside brace
+        ok( contains_wildcard("{a*,b\\}")); # because * is not inside brace
         ok( contains_wildcard("{a*,b\\\\}"));
     };
 
