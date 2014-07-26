@@ -28,6 +28,7 @@ subtest contains_wildcard => sub {
     subtest "character class" => sub {
         ok( contains_wildcard("ab[cd]"));
         ok(!contains_wildcard("ab[cd"));
+        ok(!contains_wildcard("abcd]"));
         ok(!contains_wildcard("ab\\[cd]"));
         ok( contains_wildcard("ab\\\\[cd]"));
         ok(!contains_wildcard("ab[cd\\]"));
@@ -35,20 +36,29 @@ subtest contains_wildcard => sub {
     };
 
     subtest "brace expansion" => sub {
-        ok(!contains_wildcard("{}"));   # need at least a comma
-        ok(!contains_wildcard("{a}"));  # ditto
-        ok(!contains_wildcard("{a*}")); # ditto
+        ok(!contains_wildcard("{}"));    # need at least a comma
+        ok(!contains_wildcard("{a}"));   # ditto
+        ok(!contains_wildcard("{a*}"));  # ditto
+        ok(!contains_wildcard("{a?}"));  # ditto
+        ok(!contains_wildcard("{[a]}")); # ditto
         ok( contains_wildcard("{,}"));
         ok( contains_wildcard("{a,}"));
         ok( contains_wildcard("{a*,}"));
+        ok( contains_wildcard("{a?,}"));
+        ok( contains_wildcard("{[a],}"));
         ok( contains_wildcard("{a*,b}"));
-        ok( contains_wildcard("{a*,b[a]}"));
+        ok( contains_wildcard("{a,b[a]}"));
+
         ok(!contains_wildcard("\\{a,b}"));
         ok( contains_wildcard("\\{a*,b}")); # because * is not inside brace
-        ok( contains_wildcard("\\\\{a*,b}"));
+        ok( contains_wildcard("\\{a?,b}")); # ditto
+        ok( contains_wildcard("\\{[a],}")); # ditto
+        ok( contains_wildcard("\\\\{a,}"));
         ok(!contains_wildcard("{a,b\\}"));
-        ok( contains_wildcard("{a*,b\\}")); # because * is not inside brace
-        ok( contains_wildcard("{a*,b\\\\}"));
+        ok( contains_wildcard("{a*,b\\}"));  # because * is not inside brace
+        ok( contains_wildcard("{a?,b\\}"));  # ditto
+        ok( contains_wildcard("{[a],b\\}")); # ditto
+        ok( contains_wildcard("{a,b\\\\}"));
     };
 
     subtest "other non-wildcard" => sub {
