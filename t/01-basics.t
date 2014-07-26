@@ -28,6 +28,7 @@ subtest contains_wildcard => sub {
     subtest "character class" => sub {
         ok( contains_wildcard("ab[cd]"));
         ok(!contains_wildcard("ab[cd"));
+        ok(!contains_wildcard("abcd]"));
         ok(!contains_wildcard("ab\\[cd]"));
         ok( contains_wildcard("ab\\\\[cd]"));
         ok(!contains_wildcard("ab[cd\\]"));
