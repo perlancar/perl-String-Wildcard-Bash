@@ -14,7 +14,7 @@ our @EXPORT_OK = qw(
 
 # note: order is important here, brace encloses the other
 my $re1 =
-    qr/
+    qr(
           # non-escaped brace expression, with at least one comma
           (?P<brace>
               (?<!\\)(?:\\\\)*\{
@@ -23,8 +23,10 @@ my $re1 =
               (?<!\\)(?:\\\\)*\}
           )
       |
-          # non-escaped brace expression, to catch * and ? inside so it does not
-          # go to joker
+          # non-escaped brace expression, to catch * or ? or [...] inside so
+          # they don't go to below pattern, because bash doesn't consider them
+          # wildcards, e.g. '/{et?,us*}' expands to '/etc /usr', but '/{et?}'
+          # doesn't expand at all to /etc.
           (?P<braceno>
               (?<!\\)(?:\\\\)*\{
               (?:           \\\\ | \\\{ | \\\} | [^\\\{\}] )*
@@ -42,7 +44,7 @@ my $re1 =
               # non-escaped * and ?
               (?<!\\)(?:\\\\)*[*?]
           )
-      /ox;
+      )ox;
 
 sub contains_wildcard {
     my $str = shift;
