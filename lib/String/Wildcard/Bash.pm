@@ -10,10 +10,11 @@ use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(
                        contains_wildcard
+                       $RE_WILDCARD_BASH
                );
 
 # note: order is important here, brace encloses the other
-my $re1 =
+our $RE_WILDCARD_BASH =
     qr(
           # non-escaped brace expression, with at least one comma
           (?P<brace>
@@ -49,7 +50,7 @@ my $re1 =
 sub contains_wildcard {
     my $str = shift;
 
-    while ($str =~ /$re1/go) {
+    while ($str =~ /$RE_WILDCARD_BASH/go) {
         my %m = %+;
         return 1 if $m{brace} || $m{class} || $m{joker};
     }
@@ -63,7 +64,7 @@ sub contains_wildcard {
 
 =head1 SYNOPSIS
 
-    use String::Wildcard::Bash qw(contains_wildcard);
+    use String::Wildcard::Bash qw(contains_wildcard $RE_WILDCARD_BASH);
 
     say 1 if contains_wildcard(""));      # -> 0
     say 1 if contains_wildcard("ab*"));   # -> 1
