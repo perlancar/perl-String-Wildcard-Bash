@@ -9,8 +9,9 @@ use warnings;
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(
-                       contains_wildcard
                        $RE_WILDCARD_BASH
+                       contains_wildcard
+                       convert_wildcard_to_sql
                );
 
 # note: order is important here, brace encloses the other
@@ -45,6 +46,11 @@ our $RE_WILDCARD_BASH =
               # non-escaped * and ?
               (?<!\\)(?:\\\\)*[*?]
           )
+      |
+          (?P<sql_wc>
+              # non-escaped % and ?
+              (?<!\\)(?:\\\\)*[%_]
+          )
       )ox;
 
 sub contains_wildcard {
@@ -57,6 +63,26 @@ sub contains_wildcard {
     0;
 }
 
+sub convert_wildcard_to_sql {
+    my $str = shift;
+
+    $str =~ s/$RE_WILDCARD_BASH/
+        if ($+{joker}) {
+            if ($+{joker} eq '*') {
+                "%";
+            } else {
+                "_";
+            }
+        } elsif ($+{sql_wc}) {
+            "\\$+{sql_wc}";
+        } else {
+            $&;
+        }
+    /eg;
+
+    $str;
+}
+
 1;
 # ABSTRACT: Bash wildcard string routines
 
@@ -64,11 +90,17 @@ sub contains_wildcard {
 
 =head1 SYNOPSIS
 
-    use String::Wildcard::Bash qw(contains_wildcard $RE_WILDCARD_BASH);
+    use String::Wildcard::Bash qw(
+        $RE_WILDCARD_BASH
+        contains_wildcard
+        convert_wildcard_to_sql
+    );
 
     say 1 if contains_wildcard(""));      # -> 0
     say 1 if contains_wildcard("ab*"));   # -> 1
     say 1 if contains_wildcard("ab\\*")); # -> 0
+
+    say convert_wildcard_to_sql("foo*");  # -> "foo%"
 
 
 =head1 DESCRIPTION
@@ -91,6 +123,24 @@ C<$HOME>), arithmetic expression (e.g. C<$[1+2]>), history (C<!>), and so on.
 
 Although this module has 'Bash' in its name, this set of wildcards should be
 applicable to other Unix shells. Haven't checked completely though.
+
+=head2 convert_wildcard_to_sql($str) => str
+
+Convert bash wildcard to SQL. This includes:
+
+=over
+
+=item * converting unescaped C<*> to C<%>
+
+=item * converting unescaped C<?> to C<_>
+
+=item * escaping unescaped <%>
+
+=item * escaping unescaped C<_>
+
+=back
+
+Unsupported constructs currently will be passed as-is.
 
 
 =head1 SEE ALSO

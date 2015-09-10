@@ -4,7 +4,11 @@ use 5.010;
 use strict;
 use warnings;
 
-use String::Wildcard::Bash qw(contains_wildcard);
+use String::Wildcard::Bash qw(
+                                 $RE_WILDCARD_BASH
+                                 contains_wildcard
+                                 convert_wildcard_to_sql
+                         );
 use Test::More 0.98;
 
 subtest contains_wildcard => sub {
@@ -65,6 +69,29 @@ subtest contains_wildcard => sub {
         ok(!contains_wildcard("~/a"));
         ok(!contains_wildcard("\$a"));
     };
+
+    subtest "sql" => sub {
+        ok(!contains_wildcard("a%"));
+        ok(!contains_wildcard("a_"));
+    };
+};
+
+subtest convert_wildcard_to_sql => sub {
+    is(convert_wildcard_to_sql('a*'), 'a%');
+    is(convert_wildcard_to_sql('a*b*'), 'a%b%');
+    is(convert_wildcard_to_sql('a\\*'), 'a\\*');
+    is(convert_wildcard_to_sql('a?'), 'a_');
+    is(convert_wildcard_to_sql('a??'), 'a__');
+    is(convert_wildcard_to_sql('a\\?'), 'a\\?');
+    is(convert_wildcard_to_sql('a%'), 'a\\%');
+    is(convert_wildcard_to_sql('a\\%'), 'a\\%');
+    is(convert_wildcard_to_sql('a_'), 'a\\_');
+    is(convert_wildcard_to_sql('a\\_'), 'a\\_');
+
+    # passed as-is
+    is(convert_wildcard_to_sql('a[b]'), 'a[b]');
+    is(convert_wildcard_to_sql('a\\{b,c}'), 'a\\{b,c}');
+    is(convert_wildcard_to_sql('a{b,c}'), 'a{b,c}');
 };
 
 DONE_TESTING:
