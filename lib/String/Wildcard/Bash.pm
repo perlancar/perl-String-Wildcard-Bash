@@ -134,7 +134,7 @@ Convert bash wildcard to SQL. This includes:
 
 =item * converting unescaped C<?> to C<_>
 
-=item * escaping unescaped <%>
+=item * escaping unescaped C<%>
 
 =item * escaping unescaped C<_>
 
