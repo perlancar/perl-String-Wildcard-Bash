@@ -18,8 +18,8 @@ our @EXPORT_OK = qw(
 our $RE_WILDCARD_BASH =
     qr(
           # non-escaped brace expression, with at least one comma
-          (?P<brace>
-              (?<!\\)(?:\\\\)*\{
+          (?P<bash_brace>
+              (?<!\\)(?P<bash_brace_slashes>\\\\)*\{
               (?:           \\\\ | \\\{ | \\\} | [^\\\{\}] )*
               (?:, (?:  \\\\ | \\\{ | \\\} | [^\\\{\}] )* )+
               (?<!\\)(?:\\\\)*\}
@@ -29,27 +29,33 @@ our $RE_WILDCARD_BASH =
           # they don't go to below pattern, because bash doesn't consider them
           # wildcards, e.g. '/{et?,us*}' expands to '/etc /usr', but '/{et?}'
           # doesn't expand at all to /etc.
-          (?P<braceno>
+          (?P<literal_braceSingleElement>
               (?<!\\)(?:\\\\)*\{
               (?:           \\\\ | \\\{ | \\\} | [^\\\{\}] )*
               (?<!\\)(?:\\\\)*\}
           )
       |
-          (?P<class>
+          (?P<bash_class>
               # non-empty, non-escaped character class
               (?<!\\)(?:\\\\)*\[
               (?:  \\\\ | \\\[ | \\\] | [^\\\[\]] )+
               (?<!\\)(?:\\\\)*\]
           )
       |
-          (?P<joker>
+          (?P<bash_joker>
               # non-escaped * and ?
               (?<!\\)(?:\\\\)*[*?]
           )
       |
-          (?P<sql_wc>
+          (?P<sql_joker>
               # non-escaped % and ?
               (?<!\\)(?:\\\\)*[%_]
+          )
+      |
+          (?P<literal>
+              [^\\\[\]\{\}*?%_]+
+          |
+              .+?
           )
       )ox;
 
@@ -58,7 +64,7 @@ sub contains_wildcard {
 
     while ($str =~ /$RE_WILDCARD_BASH/go) {
         my %m = %+;
-        return 1 if $m{brace} || $m{class} || $m{joker};
+        return 1 if $m{bash_brace} || $m{bash_class} || $m{bash_joker};
     }
     0;
 }
@@ -67,14 +73,14 @@ sub convert_wildcard_to_sql {
     my $str = shift;
 
     $str =~ s/$RE_WILDCARD_BASH/
-        if ($+{joker}) {
-            if ($+{joker} eq '*') {
+        if ($+{bash_joker}) {
+            if ($+{bash_joker} eq '*') {
                 "%";
             } else {
                 "_";
             }
-        } elsif ($+{sql_wc}) {
-            "\\$+{sql_wc}";
+        } elsif ($+{sql_joker}) {
+            "\\$+{sql_joker}";
         } else {
             $&;
         }
