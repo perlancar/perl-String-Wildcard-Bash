@@ -179,7 +179,11 @@ sub convert_wildcard_to_re {
 
 =head1 FUNCTIONS
 
-=head2 contains_wildcard($str) => bool
+=head2 contains_wildcard
+
+Usage:
+
+ $bool = contains_wildcard($wildcard_str)
 
 Return true if C<$str> contains wildcard pattern. Wildcard patterns include C<*>
 (meaning zero or more characters), C<?> (exactly one character), C<[...]>
