@@ -21,7 +21,7 @@ our $RE_WILDCARD_BASH =
           # non-escaped brace expression, with at least one comma
           (?P<bash_brace>
               (?<!\\)(?P<bash_brace_slashes>\\\\)*\{
-              (?:           \\\\ | \\\{ | \\\} | [^\\\{\}] )*
+              (?:           \\\\ | \\, | \\\{ | \\\} | [^\\\{\}] )*
               (?:, (?:  \\\\ | \\\{ | \\\} | [^\\\{\}] )* )+
               (?<!\\)(?:\\\\)*\}
           )
