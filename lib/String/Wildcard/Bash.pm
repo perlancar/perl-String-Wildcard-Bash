@@ -45,7 +45,7 @@ our $RE_WILDCARD_BASH =
       |
           (?P<bash_joker>
               # non-escaped * and ?
-              (?<!\\)(?:\\\\)*[*?]
+              (?<!\\)(?:\\\\)*(?:\*\*?|\?)
           )
       |
           (?P<sql_joker>
