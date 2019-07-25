@@ -3,13 +3,14 @@
 use 5.010;
 use strict;
 use warnings;
+use Test::More 0.98;
 
 use String::Wildcard::Bash qw(
                                  $RE_WILDCARD_BASH
                                  contains_wildcard
                                  convert_wildcard_to_sql
+                                 convert_wildcard_to_re
                          );
-use Test::More 0.98;
 
 subtest contains_wildcard => sub {
     subtest "none" => sub {
@@ -96,5 +97,25 @@ subtest convert_wildcard_to_sql => sub {
     is(convert_wildcard_to_sql('a{b,c}'), 'a{b,c}');
 };
 
+subtest convert_wildcard_to_re => sub {
+    # brace
+    is(convert_wildcard_to_re('{a}'), "\\{a\\}");
+    is(convert_wildcard_to_re('f.{a.,b*}'), "f\\.(?:a\\.|b.*)");
+    # charclass
+    is(convert_wildcard_to_re('[abc-j]'), "[abc-j]");
+    # bash joker
+    is(convert_wildcard_to_re('a?foo*'), "a.foo.*");
+    # sql joker
+    is(convert_wildcard_to_re('a%'), "a\\%");
+
+    subtest "opt:brace=0" => sub {
+        is(convert_wildcard_to_re({brace=>0}, '{a,b}'), "\\{a\\,b\\}");
+    };
+    subtest "opt:dotglob" => sub {
+        is(convert_wildcard_to_re({}, '*a*'), "[^.].*a.*");
+        is(convert_wildcard_to_re({dotglob=>1}, '*a*'), ".*a.*");
+    };
+};
+
 DONE_TESTING:
-done_testing();
+done_testing;
