@@ -114,6 +114,8 @@ subtest convert_wildcard_to_re => sub {
     subtest "opt:dotglob" => sub {
         is(convert_wildcard_to_re({}, '*a*'), "[^.].*a.*");
         is(convert_wildcard_to_re({dotglob=>1}, '*a*'), ".*a.*");
+        is(convert_wildcard_to_re({}, '.*'), "\\..*");
+        is(convert_wildcard_to_re({dotglob=>1}, '.*'), "\\..*");
     };
 };
 
