@@ -78,23 +78,33 @@ sub contains_wildcard {
 }
 
 sub convert_wildcard_to_sql {
+    my $opts = ref $_[0] eq 'HASH' ? shift : {};
     my $str = shift;
 
-    $str =~ s/$RE_WILDCARD_BASH/
-        if ($+{bash_joker}) {
-            if ($+{bash_joker} eq '*') {
-                "%";
+    my @res;
+    my $p;
+    while ($str =~ /$RE_WILDCARD_BASH/g) {
+        my %m = %+;
+        if (defined($p = $m{bash_brace_content})) {
+            die "Cannot convert brace pattern '$p' to SQL";
+        } elsif ($p = $m{bash_joker}) {
+            if ($m{bash_joker} eq '*' || $m{bash_joker} eq '**') {
+                push @res, "%";
             } else {
-                "_";
+                push @res, "_";
             }
-        } elsif ($+{sql_joker}) {
-            "\\$+{sql_joker}";
-        } else {
-            $&;
+        } elsif ($p = $m{sql_joker}) {
+            push @res, "\\$p";
+        } elsif (defined($p = $m{literal_brace_single_element})) {
+            die "Currently cannot convert brace literal '$p' to SQL";
+        } elsif (defined($p = $m{bash_class})) {
+            die "Currently cannot convert class pattern '$p' to SQL";
+        } elsif (defined($p = $m{literal})) {
+            push @res, $p;
         }
-    /eg;
+    }
 
-    $str;
+    join "", @res;
 }
 
 sub convert_wildcard_to_re {
@@ -222,7 +232,7 @@ Convert bash wildcard to SQL pattern. This includes:
 
 =back
 
-Unsupported constructs currently will be passed as-is.
+Unsupported constructs will cause the function to die.
 
 =head2 convert_wildcard_to_re
 
