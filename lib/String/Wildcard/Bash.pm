@@ -195,16 +195,18 @@ Usage:
 
  $bool = contains_wildcard($wildcard_str)
 
-Return true if C<$str> contains wildcard pattern. Wildcard patterns include C<*>
-(meaning zero or more characters), C<?> (exactly one character), C<[...]>
-(character class), C<{...,}> (brace expansion). Can handle escaped/backslash
-(e.g. C<foo\*> does not contain wildcard, it's C<foo> followed by a literal
-asterisk C<*>).
+Return true if C<$str> contains wildcard pattern. Wildcard patterns include
+I<joker> such as C<*> (meaning zero or more of any characters) and C<?> (exactly
+one of any character), I<character class> C<[...]>, and I<brace> C<{...,}>
+(brace expansion). A pattern can be escaped using a bacslash so it becomes
+literal, e.g. C<foo\*> does not contain wildcard because it's C<foo> followed by
+a literal asterisk C<*>.
 
-Aside from wildcard, bash does other types of expansions/substitutions too, but
-these are not considered wildcard. These include tilde expansion (e.g. C<~>
-becomes C</home/alice>), parameter and variable expansion (e.g. C<$0> and
-C<$HOME>), arithmetic expression (e.g. C<$[1+2]>), history (C<!>), and so on.
+Aside from the abovementioned wildcard patterns, bash does other types of
+expansions/substitutions too, but these are not considered wildcard. These
+include tilde expansion (e.g. C<~> becomes C</home/alice>), parameter and
+variable expansion (e.g. C<$0> and C<$HOME>), arithmetic expression (e.g.
+C<$[1+2]>), or history (C<!>).
 
 Although this module has 'Bash' in its name, this set of wildcards should be
 applicable to other Unix shells. Haven't checked completely though.
