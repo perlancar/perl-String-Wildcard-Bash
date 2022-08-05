@@ -286,8 +286,10 @@ Examples:
 =item * globstar
 
 Bool. Default is false. Whether globstar (C<**>) can match across subdirectories
-(matches path separator). This option follows bash's setting C<globstar>. When
-globstar option is off, C<**> behaves like C<*>.
+(matches path separator). The default behavior follows bash; that is, globstar
+option is off and C<**> behaves like C<*>.
+
+This setting is similar to shell behavior (shopt) setting C<globstar>.
 
  convert_wildcard_to_re({},                         '*'); # => "[^.][^/]*"
  convert_wildcard_to_re({},                        '**'); # => "[^.][^/]*"
