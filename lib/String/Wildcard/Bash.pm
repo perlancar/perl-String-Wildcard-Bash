@@ -1,14 +1,14 @@
 package String::Wildcard::Bash;
 
-# DATE
-# VERSION
-
 use 5.010001;
 use strict;
 use warnings;
 
-use Exporter;
-our @ISA = qw(Exporter);
+use Exporter 'import';
+
+# DATE
+# VERSION
+
 our @EXPORT_OK = qw(
                        $RE_WILDCARD_BASH
                        contains_wildcard
@@ -111,11 +111,12 @@ sub convert_wildcard_to_re {
     my $opts = ref $_[0] eq 'HASH' ? shift : {};
     my $str = shift;
 
-    my $opt_brace   = $opts->{brace} // 1;
-    my $opt_dotglob = $opts->{dotglob} // 0;
+    my $opt_brace    = $opts->{brace} // 1;
+    my $opt_dotglob  = $opts->{dotglob} // 0;
 
     my @res;
     my $p;
+    my $after_pathsep;
     while ($str =~ /$RE_WILDCARD_BASH/g) {
         my %m = %+;
         if (defined($p = $m{bash_brace_content})) {
@@ -130,8 +131,8 @@ sub convert_wildcard_to_re {
                 #use DD; dd \@elems;
                 push @res, "(?:", join("|", map {
                     convert_wildcard_to_re({
-                        brace   => 0,
-                        dotglob => $opt_dotglob || @res,
+                        brace    => 0,
+                        dotglob  => $opt_dotglob,
                     }, $_)} @elems), ")";
             } else {
                 push @res, quotemeta($m{bash_brace});
@@ -141,8 +142,9 @@ sub convert_wildcard_to_re {
             if ($p eq '?') {
                 push @res, '.';
             } elsif ($p eq '*') {
-                push @res, $opt_dotglob || @res ? '.*' : '[^.].*';
-            } elsif ($p eq '**') {
+                push @res, $opt_dotglob || (@res && !$after_pathsep) ?
+                    '[^/]*' : '[^/.][^/]*';
+            } elsif ($p eq '**') { # and opt_globstar
                 push @res, '.*';
             }
 
@@ -156,6 +158,8 @@ sub convert_wildcard_to_re {
         } elsif (defined($p = $m{literal})) {
             push @res, quotemeta($p);
         }
+
+        $after_pathsep = defined($m{literal}) && substr($m{literal}, -1) eq '/';
     }
 
     join "", @res;
@@ -270,6 +274,9 @@ Examples:
 
  convert_wildcard_to_re({}          , '*a*'); # => "[^.].*a.*"
  convert_wildcard_to_re({dotglob=>1}, '*a*'); # => ".*a.*"
+
+=item * path_separator
+
 
 =back
 

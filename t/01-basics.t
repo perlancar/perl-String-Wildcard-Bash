@@ -103,23 +103,162 @@ subtest convert_wildcard_to_sql => sub {
 subtest convert_wildcard_to_re => sub {
     # brace
     is(convert_wildcard_to_re('{a}'), "\\{a\\}");
-    is(convert_wildcard_to_re('f.{a.,b*}'), "f\\.(?:a\\.|b.*)");
+    is(convert_wildcard_to_re('f.{a.,b*}'), "f\\.(?:a\\.|b[^/]*)");
+
     # charclass
     is(convert_wildcard_to_re('[abc-j]'), "[abc-j]");
+
     # bash joker
-    is(convert_wildcard_to_re('a?foo*'), "a.foo.*");
+    is(convert_wildcard_to_re('a?foo*'), "a.foo[^/]*");
+
     # sql joker
     is(convert_wildcard_to_re('a%'), "a\\%");
 
     subtest "opt:brace=0" => sub {
         is(convert_wildcard_to_re({brace=>0}, '{a,b}'), "\\{a\\,b\\}");
     };
-    subtest "opt:dotglob" => sub {
-        is(convert_wildcard_to_re({}, '*a*'), "[^.].*a.*");
-        is(convert_wildcard_to_re({dotglob=>1}, '*a*'), ".*a.*");
-        is(convert_wildcard_to_re({}, '.*'), "\\..*");
-        is(convert_wildcard_to_re({dotglob=>1}, '.*'), "\\..*");
+    subtest "opt:dotglob=0" => sub {
+        is(convert_wildcard_to_re({}, '*a*'), "[^/.][^/]*a[^/]*");
+        is(convert_wildcard_to_re({}, '.*'), "\\.[^/]*");
+
+        my $re;
+
+        subtest "matching with *" => sub {
+            $re = convert_wildcard_to_re("*"); $re = qr/\A$re\z/;
+            ok("a"     =~ $re);
+            ok("aaa"   =~ $re);
+            ok("a.aa"  =~ $re);
+            ok(".a"    !~ $re);
+            ok(".aaa"  !~ $re);
+
+            ok("a/b"   !~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" !~ $re);
+        };
+
+        subtest "matching with .*" => sub {
+            $re = convert_wildcard_to_re(".*"); $re = qr/\A$re\z/;
+            ok("a"     !~ $re);
+            ok("aaa"   !~ $re);
+            ok("a.aa"  !~ $re);
+            ok(".a"    =~ $re);
+            ok(".aaa"  =~ $re);
+
+            ok("a/b"   !~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" !~ $re);
+        };
+
+        subtest "matching with */*" => sub {
+            $re = convert_wildcard_to_re("*/*"); $re = qr/\A$re\z/;
+            ok("a"     !~ $re);
+            ok("aaa"   !~ $re);
+            ok("a.aa"  !~ $re);
+            ok(".a"    !~ $re);
+            ok(".aaa"  !~ $re);
+
+            ok("a/b"   =~ $re);
+            ok("a/.b"  !~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" !~ $re);
+        };
+
+        subtest "matching with .*/*" => sub {
+            $re = convert_wildcard_to_re(".*/*"); $re = qr/\A$re\z/;
+            ok("a/b"   !~ $re);
+            ok("a/.b"  !~ $re);
+            ok(".a/b"  =~ $re);
+            ok(".a/.b" !~ $re);
+        };
+
+        subtest "matching with */.*" => sub {
+            $re = convert_wildcard_to_re("*/.*"); $re = qr/\A$re\z/;
+            ok("a/b"   !~ $re);
+            ok("a/.b"  =~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" !~ $re);
+        };
+
+        subtest "matching with .*/.*" => sub {
+            $re = convert_wildcard_to_re(".*/.*"); $re = qr/\A$re\z/;
+            ok("a/b"   !~ $re);
+            ok("a/.b"  !~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" =~ $re);
+        };
     };
+
+    subtest "opt:dotglob=1" => sub {
+        is(convert_wildcard_to_re({dotglob=>1}, '*a*'), "[^/]*a[^/]*");
+        is(convert_wildcard_to_re({dotglob=>1}, '.*'), "\\.[^/]*");
+
+        my $re;
+
+        subtest "matching with *" => sub {
+            $re = convert_wildcard_to_re({dotglob=>1}, "*"); $re = qr/\A$re\z/;
+            ok("a"     =~ $re);
+            ok("aaa"   =~ $re);
+            ok("a.aa"  =~ $re);
+            ok(".a"    =~ $re);
+            ok(".aaa"  =~ $re);
+
+            ok("a/b"   !~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" !~ $re);
+        };
+
+        subtest "matching with .*" => sub {
+            $re = convert_wildcard_to_re({dotglob=>1}, ".*"); $re = qr/\A$re\z/;
+            ok("a"     !~ $re);
+            ok("aaa"   !~ $re);
+            ok("a.aa"  !~ $re);
+            ok(".a"    =~ $re);
+            ok(".aaa"  =~ $re);
+
+            ok("a/b"   !~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" !~ $re);
+        };
+
+        subtest "matching with */*" => sub {
+            $re = convert_wildcard_to_re({dotglob=>1}, "*/*"); $re = qr/\A$re\z/;
+            ok("a"     !~ $re);
+            ok("aaa"   !~ $re);
+            ok("a.aa"  !~ $re);
+            ok(".a"    !~ $re);
+            ok(".aaa"  !~ $re);
+
+            ok("a/b"   =~ $re);
+            ok("a/.b"  =~ $re);
+            ok(".a/b"  =~ $re);
+            ok(".a/.b" =~ $re);
+        };
+
+        subtest "matching with .*/*" => sub {
+            $re = convert_wildcard_to_re({dotglob=>1}, ".*/*"); $re = qr/\A$re\z/;
+            ok("a/b"   !~ $re);
+            ok("a/.b"  !~ $re);
+            ok(".a/b"  =~ $re);
+            ok(".a/.b" =~ $re);
+        };
+
+        subtest "matching with */.*" => sub {
+            $re = convert_wildcard_to_re({dotglob=>1}, "*/.*"); $re = qr/\A$re\z/;
+            ok("a/b"   !~ $re);
+            ok("a/.b"  =~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" =~ $re);
+        };
+
+        subtest "matching with .*/.*" => sub {
+            $re = convert_wildcard_to_re({dotglob=>1}, ".*/.*"); $re = qr/\A$re\z/;
+            ok("a/b"   !~ $re);
+            ok("a/.b"  !~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" =~ $re);
+        };
+    };
+
 };
 
 DONE_TESTING:
