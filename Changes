@@ -3,9 +3,8 @@
         - Add functions:
           contains_{brace,joker,class,qmark,glob,globstar}_wildcard.
 
-        - [function convert_wildcard_to_re] Add option: path_separator.
-
-        - [function convert_wildcard_to_re] Add option: globstar.
+        - [function convert_wildcard_to_re] Add options: globstar,
+          path_separator.
 
         - Better compliance with bash: joker/glob does not match across
           subdirectory level, e.g. '*' matches 'aaa' but not 'aaa/bbb'.
