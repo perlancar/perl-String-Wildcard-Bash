@@ -113,6 +113,7 @@ sub convert_wildcard_to_re {
 
     my $opt_brace    = $opts->{brace} // 1;
     my $opt_dotglob  = $opts->{dotglob} // 0;
+    my $opt_globstar = $opts->{globstar} // 0;
 
     my @res;
     my $p;
@@ -133,6 +134,7 @@ sub convert_wildcard_to_re {
                     convert_wildcard_to_re({
                         brace    => 0,
                         dotglob  => $opt_dotglob,
+                        globstar => $opt_globstar,
                     }, $_)} @elems), ")";
             } else {
                 push @res, quotemeta($m{bash_brace});
@@ -141,12 +143,18 @@ sub convert_wildcard_to_re {
         } elsif (defined($p = $m{bash_joker})) {
             if ($p eq '?') {
                 push @res, '.';
-            } elsif ($p eq '*') {
+            } elsif ($p eq '*' || $p eq '**' && !$opt_globstar) {
                 push @res, $opt_dotglob || (@res && !$after_pathsep) ?
                     '[^/]*' : '[^/.][^/]*';
-            } elsif ($p eq '**') { # and opt_globstar
-                push @res, '.*';
-            }
+            } elsif ($p eq '**') { # and with 'globstar' option set
+                if ($opt_dotglob) {
+                    push @res, '.*';
+                } elsif (@res && !$after_pathsep) {
+                    push @res, '(?:[^/]*)(?:/+[^/.][^/]*)*';
+                } else {
+                    push @res, '(?:[^/.][^/]*)(?:/+[^/.][^/]*)*';
+                }
+           }
 
         } elsif (defined($p = $m{literal_brace_single_element})) {
             push @res, quotemeta($p);
@@ -272,11 +280,19 @@ This setting is similar to shell behavior (shopt) setting C<dotglob>.
 
 Examples:
 
- convert_wildcard_to_re({}          , '*a*'); # => "[^.].*a.*"
- convert_wildcard_to_re({dotglob=>1}, '*a*'); # => ".*a.*"
+ convert_wildcard_to_re({}          , '*a*'); # => "[^.][^/]*a[^/]*"
+ convert_wildcard_to_re({dotglob=>1}, '*a*'); # =>     "[^/]*a[^/]*"
 
-=item * path_separator
+=item * globstar
 
+Bool. Default is false. Whether globstar (C<**>) can match across subdirectories
+(matches path separator). This option follows bash's setting C<globstar>. When
+globstar option is off, C<**> behaves like C<*>.
+
+ convert_wildcard_to_re({},                         '*'); # => "[^.][^/]*"
+ convert_wildcard_to_re({},                        '**'); # => "[^.][^/]*"
+ convert_wildcard_to_re({globstar=>1},             '**'); # => "(?:[^/.][^/]*)(?:/+[^/.][^/]*)*"
+ convert_wildcard_to_re({globstar=>1, dotglob=>1}, '**'); # => ".*"
 
 =back
 

@@ -118,13 +118,16 @@ subtest convert_wildcard_to_re => sub {
         is(convert_wildcard_to_re({brace=>0}, '{a,b}'), "\\{a\\,b\\}");
     };
     subtest "opt:dotglob=0" => sub {
-        is(convert_wildcard_to_re({}, '*a*'), "[^/.][^/]*a[^/]*");
-        is(convert_wildcard_to_re({}, '.*'), "\\.[^/]*");
+        # we'll just test how the regex works
+        #is(convert_wildcard_to_re({}, '*a*'), "[^/.][^/]*a[^/]*");
+        #is(convert_wildcard_to_re({}, '.*'), "\\.[^/]*");
 
         my $re;
 
         subtest "matching with *" => sub {
             $re = convert_wildcard_to_re("*"); $re = qr/\A$re\z/;
+            ok(""      !~ $re); # this is an implementaiton artefact, it should match?
+
             ok("a"     =~ $re);
             ok("aaa"   =~ $re);
             ok("a.aa"  =~ $re);
@@ -189,13 +192,16 @@ subtest convert_wildcard_to_re => sub {
     };
 
     subtest "opt:dotglob=1" => sub {
-        is(convert_wildcard_to_re({dotglob=>1}, '*a*'), "[^/]*a[^/]*");
-        is(convert_wildcard_to_re({dotglob=>1}, '.*'), "\\.[^/]*");
+        # we'll just test how the regex works
+        #is(convert_wildcard_to_re({dotglob=>1}, '*a*'), "[^/]*a[^/]*");
+        #is(convert_wildcard_to_re({dotglob=>1}, '.*'), "\\.[^/]*");
 
         my $re;
 
         subtest "matching with *" => sub {
             $re = convert_wildcard_to_re({dotglob=>1}, "*"); $re = qr/\A$re\z/;
+            ok(""      =~ $re); # this is as per-spec
+
             ok("a"     =~ $re);
             ok("aaa"   =~ $re);
             ok("a.aa"  =~ $re);
@@ -259,6 +265,88 @@ subtest convert_wildcard_to_re => sub {
         };
     };
 
+    subtest "opt:globstar=0" => sub {
+        my $re;
+
+        # without globstar set, ** should behave just like *
+        subtest "matching with **" => sub {
+            $re = convert_wildcard_to_re("**"); $re = qr/\A$re\z/;
+            ok(""      !~ $re); # this is an implementaiton artefact, it should match?
+
+            ok("a"     =~ $re);
+            ok("aaa"   =~ $re);
+            ok("a.aa"  =~ $re);
+            ok(".a"    !~ $re);
+            ok(".aaa"  !~ $re);
+
+            ok("a/b"   !~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" !~ $re);
+        };
+
+        subtest "matching with .**" => sub {
+            $re = convert_wildcard_to_re(".**"); $re = qr/\A$re\z/;
+            ok("a"     !~ $re);
+            ok("aaa"   !~ $re);
+            ok("a.aa"  !~ $re);
+            ok(".a"    =~ $re);
+            ok(".aaa"  =~ $re);
+
+            ok("a/b"   !~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" !~ $re);
+        };
+    };
+
+    subtest "opt:globstar=1" => sub {
+        my $re;
+
+        subtest "matching with **" => sub {
+            $re = convert_wildcard_to_re({globstar=>1}, "**"); $re = qr/\A$re\z/;
+            ok(""      !~ $re); # this is an implementaiton artefact, it should match?
+
+            ok("a"     =~ $re);
+            ok("aaa"   =~ $re);
+            ok("a.aa"  =~ $re);
+            ok(".a"    !~ $re);
+            ok(".aaa"  !~ $re);
+
+            ok("a/b"   =~ $re);
+            ok("a/.b"  !~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" !~ $re);
+        };
+
+        subtest "matching with ** and opt:dotglob" => sub {
+            $re = convert_wildcard_to_re({globstar=>1, dotglob=>1}, "**"); $re = qr/\A$re\z/;
+            ok(""      =~ $re); # as per-spe
+
+            ok("a"     =~ $re);
+            ok("aaa"   =~ $re);
+            ok("a.aa"  =~ $re);
+            ok(".a"    =~ $re);
+            ok(".aaa"  =~ $re);
+
+            ok("a/b"   =~ $re);
+            ok("a/.b"  =~ $re);
+            ok(".a/b"  =~ $re);
+            ok(".a/.b" =~ $re);
+        };
+
+        subtest "matching with .** and opt:dotglob" => sub {
+            $re = convert_wildcard_to_re({globstar=>1, dotglob=>1}, ".**"); note "re=$re"; $re = qr/\A$re\z/;
+            ok("a"     !~ $re);
+            ok("aaa"   !~ $re);
+            ok("a.aa"  !~ $re);
+            ok(".a"    =~ $re);
+            ok(".aaa"  =~ $re);
+
+            ok("a/b"   !~ $re);
+            ok("a/.b"  !~ $re);
+            ok(".a/b"  =~ $re);
+            ok(".a/.b" =~ $re);
+        };
+    };
 };
 
 DONE_TESTING:
