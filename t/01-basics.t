@@ -347,6 +347,39 @@ subtest convert_wildcard_to_re => sub {
             ok(".a/.b" =~ $re);
         };
     };
+
+    subtest "opt:path_separator" => sub {
+        my $re;
+
+        subtest "matching with *" => sub {
+            $re = convert_wildcard_to_re({path_separator=>":"}, "*"); $re = qr/\A$re\z/;
+            ok("a/b"   =~ $re);
+            ok("a/.b"  =~ $re);
+            ok(".a/b"  !~ $re);
+            ok(".a/.b" !~ $re);
+
+            ok("a:b"   !~ $re);
+            ok("a:.b"  !~ $re);
+            ok(".a:b"  !~ $re);
+            ok(".a:.b" !~ $re);
+        };
+
+        subtest "matching with *:*" => sub {
+            $re = convert_wildcard_to_re({path_separator=>":"}, "*:*"); $re = qr/\A$re\z/;
+            ok("a:b"   =~ $re);
+            ok("a:.b"  !~ $re);
+            ok(".a:b"  !~ $re);
+            ok(".a:.b" !~ $re);
+        };
+
+        subtest "matching with **" => sub {
+            $re = convert_wildcard_to_re({path_separator=>':', globstar=>1}, "**"); $re = qr/\A$re\z/;
+            ok("a:b"   =~ $re);
+            ok("a:.b"  !~ $re);
+            ok(".a:b"  !~ $re);
+            ok(".a:.b" !~ $re);
+        };
+    };
 };
 
 DONE_TESTING:

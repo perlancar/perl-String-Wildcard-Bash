@@ -114,6 +114,17 @@ sub convert_wildcard_to_re {
     my $opt_brace    = $opts->{brace} // 1;
     my $opt_dotglob  = $opts->{dotglob} // 0;
     my $opt_globstar = $opts->{globstar} // 0;
+    my $opt_ps       = $opts->{path_separator} // '/';
+
+    die "Please use a single character for path_separator" unless length($opt_ps) == 1;
+    my $q_ps =
+        $opt_ps eq '-' ? "\\-" :
+        $opt_ps eq '/' ? '/' :
+        quotemeta($opt_ps);
+
+    my $re_not_ps        = "[^$q_ps]";
+    my $re_not_dot       = "[^.]";
+    my $re_not_dot_or_ps = "[^.$q_ps]";
 
     my @res;
     my $p;
@@ -145,14 +156,14 @@ sub convert_wildcard_to_re {
                 push @res, '.';
             } elsif ($p eq '*' || $p eq '**' && !$opt_globstar) {
                 push @res, $opt_dotglob || (@res && !$after_pathsep) ?
-                    '[^/]*' : '[^/.][^/]*';
+                    "$re_not_ps*" : "$re_not_dot_or_ps$re_not_ps*";
             } elsif ($p eq '**') { # and with 'globstar' option set
                 if ($opt_dotglob) {
                     push @res, '.*';
                 } elsif (@res && !$after_pathsep) {
-                    push @res, '(?:[^/]*)(?:/+[^/.][^/]*)*';
+                    push @res, "(?:$re_not_ps*)(?:$q_ps+$re_not_dot_or_ps$re_not_ps*)*";
                 } else {
-                    push @res, '(?:[^/.][^/]*)(?:/+[^/.][^/]*)*';
+                    push @res, "(?:$re_not_dot_or_ps$re_not_ps*)(?:$q_ps+$re_not_dot_or_ps$re_not_ps*)*";
                 }
            }
 
@@ -167,7 +178,7 @@ sub convert_wildcard_to_re {
             push @res, quotemeta($p);
         }
 
-        $after_pathsep = defined($m{literal}) && substr($m{literal}, -1) eq '/';
+        $after_pathsep = defined($m{literal}) && substr($m{literal}, -1) eq $opt_ps;
     }
 
     join "", @res;
@@ -295,6 +306,11 @@ This setting is similar to shell behavior (shopt) setting C<globstar>.
  convert_wildcard_to_re({},                        '**'); # => "[^.][^/]*"
  convert_wildcard_to_re({globstar=>1},             '**'); # => "(?:[^/.][^/]*)(?:/+[^/.][^/]*)*"
  convert_wildcard_to_re({globstar=>1, dotglob=>1}, '**'); # => ".*"
+
+=item * path_separator
+
+String, 1 character. Default is C</>. Can be used to customize the path
+separator.
 
 =back
 
