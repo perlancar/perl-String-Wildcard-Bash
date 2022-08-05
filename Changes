@@ -20,7 +20,7 @@
 	- [doc] Some rewording.
 
 
-0.042   2019-07-27  Released-By: PERLANCAR; Urgency: medium
+0.042   2019-07-27  Released-By: PERLANCAR; Urgency: medium; Backward-Incompatible: yes
 
 	- [incompatible change] instead of passing the construct as-is,
 	  convert_wildcard_to_sql() now dies when given a wildcard
