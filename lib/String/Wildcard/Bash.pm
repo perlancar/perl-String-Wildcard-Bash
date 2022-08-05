@@ -130,8 +130,8 @@ sub convert_wildcard_to_re {
                 #use DD; dd \@elems;
                 push @res, "(?:", join("|", map {
                     convert_wildcard_to_re({
-                        bash_brace => 0,
-                        dotglob    => $opt_dotglob || @res,
+                        brace   => 0,
+                        dotglob => $opt_dotglob || @res,
                     }, $_)} @elems), ")";
             } else {
                 push @res, quotemeta($m{bash_brace});
