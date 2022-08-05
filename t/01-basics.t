@@ -9,6 +9,12 @@ use Test::More 0.98;
 use String::Wildcard::Bash qw(
                                  $RE_WILDCARD_BASH
                                  contains_wildcard
+                                 contains_brace_wildcard
+                                 contains_class_wildcard
+                                 contains_joker_wildcard
+                                 contains_qmark_wildcard
+                                 contains_glob_wildcard
+                                 contains_globstar_wildcard
                                  convert_wildcard_to_sql
                                  convert_wildcard_to_re
                          );
@@ -78,6 +84,51 @@ subtest contains_wildcard => sub {
         ok(!contains_wildcard("a%"));
         ok(!contains_wildcard("a_"));
     };
+};
+
+subtest contains_brace_wildcard => sub {
+    ok(!contains_brace_wildcard("abc"));
+    ok(!contains_brace_wildcard("ab*"));
+    ok(!contains_brace_wildcard("ab**"));
+    ok(!contains_brace_wildcard("ab?"));
+    ok(!contains_brace_wildcard("ab[cd]"));
+    ok( contains_brace_wildcard("{a*,b}"));
+};
+
+subtest contains_class_wildcard => sub {
+    ok(!contains_class_wildcard("abc"));
+    ok(!contains_class_wildcard("ab*"));
+    ok(!contains_class_wildcard("ab**"));
+    ok(!contains_class_wildcard("ab?"));
+    ok( contains_class_wildcard("ab[cd]"));
+    ok(!contains_class_wildcard("{a*,b}"));
+};
+
+subtest contains_qmark_wildcard => sub {
+    ok(!contains_qmark_wildcard("abc"));
+    ok(!contains_qmark_wildcard("ab*"));
+    ok(!contains_qmark_wildcard("ab**"));
+    ok( contains_qmark_wildcard("ab?"));
+    ok(!contains_qmark_wildcard("ab[cd]"));
+    ok(!contains_qmark_wildcard("{a*,b}"));
+};
+
+subtest contains_glob_wildcard => sub {
+    ok(!contains_glob_wildcard("abc"));
+    ok( contains_glob_wildcard("ab*"));
+    ok(!contains_glob_wildcard("ab**"));
+    ok(!contains_glob_wildcard("ab?"));
+    ok(!contains_glob_wildcard("ab[cd]"));
+    ok(!contains_glob_wildcard("{a*,b}"));
+};
+
+subtest contains_globstar_wildcard => sub {
+    ok(!contains_globstar_wildcard("abc"));
+    ok(!contains_globstar_wildcard("ab*"));
+    ok( contains_globstar_wildcard("ab**"));
+    ok(!contains_globstar_wildcard("ab?"));
+    ok(!contains_globstar_wildcard("ab[cd]"));
+    ok(!contains_globstar_wildcard("{a*,b}"));
 };
 
 subtest convert_wildcard_to_sql => sub {

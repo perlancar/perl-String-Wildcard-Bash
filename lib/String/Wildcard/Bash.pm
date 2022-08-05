@@ -6,12 +6,20 @@ use warnings;
 
 use Exporter 'import';
 
+# AUTHORITY
 # DATE
+# DIST
 # VERSION
 
 our @EXPORT_OK = qw(
                        $RE_WILDCARD_BASH
                        contains_wildcard
+                       contains_brace_wildcard
+                       contains_class_wildcard
+                       contains_joker_wildcard
+                       contains_qmark_wildcard
+                       contains_glob_wildcard
+                       contains_globstar_wildcard
                        convert_wildcard_to_sql
                        convert_wildcard_to_re
                );
@@ -73,6 +81,66 @@ sub contains_wildcard {
     while ($str =~ /$RE_WILDCARD_BASH/go) {
         my %m = %+;
         return 1 if $m{bash_brace} || $m{bash_class} || $m{bash_joker};
+    }
+    0;
+}
+
+sub contains_brace_wildcard {
+    my $str = shift;
+
+    while ($str =~ /$RE_WILDCARD_BASH/go) {
+        my %m = %+;
+        return 1 if $m{bash_brace};
+    }
+    0;
+}
+
+sub contains_joker_wildcard {
+    my $str = shift;
+
+    while ($str =~ /$RE_WILDCARD_BASH/go) {
+        my %m = %+;
+        return 1 if $m{bash_joker};
+    }
+    0;
+}
+
+sub contains_class_wildcard {
+    my $str = shift;
+
+    while ($str =~ /$RE_WILDCARD_BASH/go) {
+        my %m = %+;
+        return 1 if $m{bash_class};
+    }
+    0;
+}
+
+sub contains_qmark_wildcard {
+    my $str = shift;
+
+    while ($str =~ /$RE_WILDCARD_BASH/go) {
+        my %m = %+;
+        return 1 if $m{bash_joker} && $m{bash_joker} eq '?';
+    }
+    0;
+}
+
+sub contains_glob_wildcard {
+    my $str = shift;
+
+    while ($str =~ /$RE_WILDCARD_BASH/go) {
+        my %m = %+;
+        return 1 if $m{bash_joker} && $m{bash_joker} eq '*';
+    }
+    0;
+}
+
+sub contains_globstar_wildcard {
+    my $str = shift;
+
+    while ($str =~ /$RE_WILDCARD_BASH/go) {
+        my %m = %+;
+        return 1 if $m{bash_joker} && $m{bash_joker} eq '**';
     }
     0;
 }
@@ -236,6 +304,36 @@ applicable to other Unix shells. Haven't checked completely though.
 
 For more specific needs, e.g. you want to check if a string just contains joker
 and not other types of wildcard patterns, use L</"$RE_WILDCARD_BASH"> directly.
+
+=head2 contains_brace_wildcard
+
+Like L</contains_wildcard>, but only return true if string contains brace
+(C<{...,}>) wildcard pattern.
+
+=head2 contains_class_wildcard
+
+Like L</contains_wildcard>, but only return true if string contains character
+class (C<[...]>) wildcard pattern.
+
+=head2 contains_joker_wildcard
+
+Like L</contains_wildcard>, but only return true if string contains any of the
+joker (C<?>, C<*>, or C<**>) wildcard patterns.
+
+=head2 contains_qmark_wildcard
+
+Like L</contains_wildcard>, but only return true if string contains the question
+mark joker (C<?>) wildcard pattern.
+
+=head2 contains_glob_wildcard
+
+Like L</contains_wildcard>, but only return true if string contains the glob
+joker (C<*>, and not C<**>) wildcard pattern.
+
+=head2 contains_globstar_wildcard
+
+Like L</contains_wildcard>, but only return true if string contains the globstar
+joker (C<**> and not C<*>) wildcard pattern.
 
 =head2 convert_wildcard_to_sql
 
